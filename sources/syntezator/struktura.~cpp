@@ -1,0 +1,207 @@
+#include <string.h>
+#include <stdio.h>
+
+#include "fstream.h"//PLIKI
+
+
+//-----------------------FUNKCJE POMOCNICZE-------------------------------------
+
+//sprawdza dlugosc tekstu char
+int dlugosc(char tekst[])
+{
+ int i=0;
+ while (tekst[i]!='\0')
+        {
+        ++i;
+        }
+return i;
+
+}    
+
+//wyszukiwanie ciagu; !0 znaleziono w ciagu,0 nie znaleziono
+int szukaj(String ciag, String szukana)
+{
+return ciag.Pos(szukana);
+}
+
+//funkcja wycina z tekstu od do podanego miejsca i zwraca wyciety text
+String wytnij(int od, int to, String ciag)
+{
+String bufor;
+for (int x=od;x<=to;x++)
+    {
+    bufor=bufor+ciag[x];
+    }
+return bufor;
+}
+
+//----------------------DEFINICJA STRUKTURY------------------------------------
+struct klucz
+{
+bool przed;
+bool po;
+char maska[5];
+char haslo[5];
+char efektor[20];
+String analizuj(String ciag);
+};
+//---------------------PROCEDURY STRUKTURY--------------------------------------
+
+String klucz::analizuj(String ciag)
+{
+//analizuje podany ciag znakowy
+//i zamienia znaki hasla na efektory zgodnie z zasadami
+//maski jaka sie pojawia przed lub po zdefiniowanym hasle
+
+int int_maska=dlugosc(maska);
+
+
+int x=1;
+while(x<ciag.Length())
+    {
+
+    String buf_to_compare=ciag[x];   // == tak mozna porownac tylko dwa stringi wiec przepisanie do stringu
+    String buf2=haslo;
+    if (buf_to_compare==buf2)   //znaleziono haslo
+       {
+       buf_to_compare=maska[0];
+
+       if (po==false && przed==false )
+          {
+           if(szukaj(wytnij(x,x+1,ciag)," ")!=0 && szukaj(wytnij(x-1,x,ciag)," ")!=0 )
+             {
+              ciag.Delete(x,dlugosc(haslo));
+              ciag.Insert(efektor,x);
+             }
+           }
+
+       //jesli sprawdzenie nie wyjdzie poza dlugosc a trzeba w przod
+        if ((x+int_maska+1)<=ciag.Length() && po==true)
+            {
+            if (buf_to_compare=="#")
+               {
+               //wyciecie z tekstu od miejsca gdzie znaleziono haslo
+               //tyle w przod ile ma maska
+               //teraz sprawdzic czy nie ma spacji a  potem czy jest
+              if ( szukaj( wytnij(x,(x+int_maska),ciag) ," ")==0 && szukaj( wytnij(x,(x+int_maska+1),ciag) ," ")!=0)
+                   {
+                    ciag.Delete(x,dlugosc(haslo));
+                    ciag.Insert(efektor,x);
+                   }
+               }
+            }
+
+        //jesli sprawdzenie nie wyjdzie poza poczatek a trzeba w tyl
+        if (int_maska<x && przed==true)
+            {
+            if (buf_to_compare=="#")
+               {
+               //wyciecie z tekstu od miejsca gdzie znaleziono haslo
+               //tyle w tyl ile ma maska , jak wycina sie w tyl to trzeba
+               // obliczyc poczatek (haslo-maska) i do miejsca gdzie jest haslo
+               //teraz sprawdzic czy nie ma spacji
+               if ( szukaj( wytnij((x-int_maska),x,ciag) ," ")==0)
+                   {
+                    ciag.Delete(x,dlugosc(haslo));
+                    ciag.Insert(efektor,x);
+                   }
+               }
+            }
+       }
+    x++;
+
+//oddanie zmienionego tekstu
+        Syntezator->memo_tekst->Clear();
+        Syntezator->memo_tekst->Text=ciag;
+    }
+
+}
+
+//-------------------------WEKTOR STRUKTURY-------------------------------------
+klucz Strukt[99]; //od 0 do 99 = 100
+//---------------------PROCEDURY WEKTORA STRUKTURY------------------------------
+
+void zapisz_strukture(String path)
+{
+/*zapis struktury do pliku*/
+/* fstream outfile;
+ outfile.open("Test.dat", ios::out | ios::binary);
+ outfile.write((char *)&Strukt, sizeof(Strukt));
+ outfile.close();*/
+
+ FILE *plik;
+ plik = fopen(path.c_str(), "wb");
+ fwrite(&Strukt, sizeof(Strukt), 1, plik);
+ fclose(plik);
+}
+
+void odczytaj_strukture(String path)
+{
+/*odczyt struktury z pliku*/
+ fstream infile;
+ infile.open(path.c_str(), ios::in | ios::binary);
+ infile.read((char *)&Strukt, sizeof(Strukt));
+ infile.close();
+}
+
+int szukaj_wolnego_w_strukturze()
+{
+for (int x=0;x<100;x++)  //od 0 do 99 =100
+     {
+     if (dlugosc(Strukt[x].haslo)==0)
+        {
+        return x;
+        break;
+        }
+     }
+}
+
+void strukturyzacja()
+{
+//ustawianie na poczatek wektora wartosci z dluzsza maska #
+for (int i=0;i<100;i++)//id struktury do jakiej porownujemy
+     {
+     for (int y=0;y<100;y++)//id struktury porownywanej
+          {
+           if (dlugosc(Strukt[i].maska)>dlugosc(Strukt[y].maska) && dlugosc(Strukt[i].haslo)!=0 && dlugosc(Strukt[y].haslo)!=0) //jesli ta do jakiej sie porownuje jest mniejsza od tej drogiej
+              {
+              //mniejsza do bufora, wieksza do mniejszej, bufor do wiekszej
+              bool b_przed=Strukt[i].przed;
+              Strukt[i].przed=Strukt[y].przed;
+              Strukt[y].przed=b_przed;
+
+              bool b_po=Strukt[i].po;
+              Strukt[i].po=Strukt[y].po;
+              Strukt[y].po=b_po;
+
+              char b_maska[5];
+              strcpy(b_maska,Strukt[i].maska);
+              strcpy(Strukt[i].maska,Strukt[y].maska);
+              strcpy(Strukt[y].maska,b_maska);
+
+              char b_haslo[5];
+              strcpy(b_haslo, Strukt[i].haslo);
+              strcpy(Strukt[i].haslo,Strukt[y].haslo);
+              strcpy(Strukt[y].haslo,b_haslo);
+
+              char b_efektor[20];
+              strcpy(b_efektor, Strukt[i].efektor);
+              strcpy(Strukt[i].efektor,Strukt[y].efektor);
+              strcpy(Strukt[y].efektor,b_efektor);
+
+              }
+          }
+     }
+}
+
+
+String analiza(String string_t)
+{
+int z=0;
+while(z<99)
+      {
+      string_t=Strukt[z].analizuj(string_t);
+      z++;
+      }
+return string_t;
+}

@@ -1,0 +1,4 @@
+fonemy_basia
+fonemy_pl
+pl_basic
+pl_medium
